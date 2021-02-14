@@ -6,21 +6,26 @@ from src.utils import set_root_logger
 # if __name__ == 'main' doesn't seem to be working in the VS code debugger
 set_root_logger()
 
-# Preprocess the dataset
+# Exploratory data analysis
 train_ds = Dataset(
     df_path='/home/kevinsuedmersen/dev/titanic/data/train.csv',
     ground_truth='Survived',
     id_col='PassengerId'
 )
+train_ds.profile(title='train_ds_profile', html_path='results/train_ds_profiling.html')
 test_ds = Dataset(
     df_path='/home/kevinsuedmersen/dev/titanic/data/test.csv',
     ground_truth=None,
     id_col='PassengerId'
 )
+test_ds.profile(title='test_ds_profile', html_path='results/test_ds_profiling.html')
+
+# Preprocessing
 predictors = ['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']
 col_name_to_fill_method = {
     'Age': 'median', 
-    'Embarked': 'mode'
+    'Embarked': 'mode',
+    'Fare': 'median'
 }
 col_name_to_encoding = {
     'Pclass': {1: 3, 2: 2, 3: 1}, # original_value: encoding_value
@@ -42,3 +47,5 @@ model = Model(
 )
 model.train_and_evaluate(train_ds.df)
 model.gen_submission_file(test_ds.df, submission_path='results/submission.csv')
+
+# TODO: Check for missing values in the test set 

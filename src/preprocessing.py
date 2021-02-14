@@ -14,11 +14,12 @@ class Dataset:
         logger.info(F'Read dataframe from ``{df_path}`` into memory')
         self.preprocessing_finished = False
 
-    def profile(self, title: str='Dataset profile report', html_path: str=None):
+    def profile(self, title: str='Dataset profile report', html_path: str=None, show_report_in_notebook: bool=False):
         """Generates a pandas-profiling report of the dataset to be displayed in a jupyter notebook.
         Optionally saves the report as an html file
 
         :param html_path: If provided, the pandas-profiling report will be saved to disk
+        :param show_report_in_notebook: Whether or not to show report in jupyter notebook
         :return: None
         """
         if not os.path.exists(html_path):
@@ -29,7 +30,8 @@ class Dataset:
                 make_sure_dir_exists(html_path)
                 profile_report.to_file(html_path)
                 logger.info(f'Saved the pandas-profiling report to ``{html_path}``')
-            profile_report.to_notebook_iframe()
+                if show_report_in_notebook:
+                    profile_report.to_notebook_iframe()
         else:
             logger.info(f'A profiling report was already generated and is located at ``{html_path}``')
 
