@@ -6,11 +6,9 @@ from src.utils import make_sure_dir_exists
 logger = logging.getLogger(__name__)
 
 class Dataset:
-    def __init__(self, df_path: str, ground_truth: str=None, id_col: str=None):
+    def __init__(self, df_path: str):
         self.df_path = df_path
-        self.ground_truth = ground_truth
-        self.id_col = id_col
-        self.df = pd.read_csv(df_path)
+        self.data = pd.read_csv(df_path)
         logger.info(F'Read dataframe from ``{df_path}`` into memory')
         self.preprocessing_finished = False
 
@@ -25,7 +23,7 @@ class Dataset:
         if not os.path.exists(html_path):
             from pandas_profiling import ProfileReport # Locally import ProfileReport, because in the VS Code debugger, it takes AGES to import it. TODO: Put back to module beginning after successful debuggging
             logger.info('Generating the profiling report')
-            profile_report = ProfileReport(self.df, title=title)
+            profile_report = ProfileReport(self.data, title=title)
             if html_path is not None:
                 make_sure_dir_exists(html_path)
                 profile_report.to_file(html_path)
@@ -46,11 +44,11 @@ class Dataset:
 
             # Calculate the fill value
             if fill_method == 'median':
-                fill_value = self.df[col_name].median()
+                fill_value = self.data[col_name].median()
             elif fill_method == 'mean':
-                fill_value = self.df[col_name].mean()
+                fill_value = self.data[col_name].mean()
             elif fill_method == 'mode':
-                fill_value = self.df[col_name].mode()
+                fill_value = self.data[col_name].mode()
             else: 
                 raise ValueError(f'Unknown fill_model provided: ``{fill_method}``')
             if isinstance(fill_value, pd.Series):
@@ -58,7 +56,7 @@ class Dataset:
             
             # Replace the missing values with the fill value
             logger.info(f'The {fill_method} of column ``{col_name}`` equals: {fill_value}')
-            self.df[col_name].fillna(fill_value, inplace=True)
+            self.data[col_name].fillna(fill_value, inplace=True)
 
     def _encode_categories(self, col_name_to_encoding):
         """Encodes categorical variables
@@ -68,34 +66,41 @@ class Dataset:
         """
         for col_name, encoding in col_name_to_encoding.items():
             if isinstance(encoding, dict):
-                self.df[col_name] = self.df[col_name].apply(lambda cat_name: encoding[cat_name])
+                self.data[col_name] = self.data[col_name].apply(lambda cat_name: encoding[cat_name])
                 logger.info(f'Converted column ``{col_name}`` using the custom mapping ``{encoding}``')
             elif encoding == 'one_hot':
-                dummies = pd.get_dummies(self.df[col_name], prefix=col_name)
-                self.df = pd.concat([self.df, dummies], axis=1)
-                self.df.drop(col_name, axis=1, inplace=True)
+                dummies = pd.get_dummies(self.data[col_name], prefix=col_name)
+                self.data = pd.concat([self.data, dummies], axis=1)
+                self.data.drop(col_name, axis=1, inplace=True)
                 logger.info(f'One-hot encoded the column ``{col_name}``')
             else:
                 raise ValueError('Unknown category encoding provided: ``{encoding}``')
 
-    def preprocess(self, col_name_to_fill_method: dict, col_name_to_encoding: dict, predictors: list):
-        """Conducts the complete preprocessing pipeline
+    def clean(self, col_name_to_fill_method: dict, col_name_to_encoding: dict):
+        """Cleans the data, i.e. replaces missing values and encodes categorical values
 
         :param col_name_to_fill_method: Dictionary describing which column's missing values should
             be filled and how
         :param col_name_to_encoding: Dictionary describing which column's categorical values should
             be encoded and how
-        :param predictors: List of predictors to include
         """
         if not self.preprocessing_finished:
-            if self.ground_truth is not None:
-                cols_to_keep = predictors + [self.ground_truth, self.id_col]
-            else:
-                cols_to_keep = predictors + [self.id_col]
-            self.df = self.df[cols_to_keep]
             self._fill_missing_values(col_name_to_fill_method)
             self._encode_categories(col_name_to_encoding)
             self.preprocessing_finished = True
             logger.info('Preprocessing finished')
         else:
             logger.info('Preprocessing was already conducted')
+    
+    def get_df_subset(self, predictors: list, id_col: str, ground_truth: str=None):
+        """Returns a subset of the dataframe
+
+        :param predictors: List of predictors to include
+        :return: Dataframe subset
+        """
+        if ground_truth is not None:
+            cols_to_keep = predictors + [ground_truth, id_col]
+        else:
+            cols_to_keep = predictors + [id_col]
+        df_subset = self.data[cols_to_keep]
+        return df_subset
