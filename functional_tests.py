@@ -32,8 +32,8 @@ col_name_to_encoding = {
     'Sex': 'one_hot',
     'Embarked': 'one_hot'
 }
-train_ds.preprocess_df_iteration_1(col_name_to_fill_method, col_name_to_encoding, predictors)
-test_ds.preprocess_df_iteration_1(col_name_to_fill_method, col_name_to_encoding, predictors)
+train_ds.preprocess(col_name_to_fill_method, col_name_to_encoding, predictors)
+test_ds.preprocess(col_name_to_fill_method, col_name_to_encoding, predictors)
 
 # Simple training run
 model = Model(
@@ -47,5 +47,3 @@ model = Model(
 )
 model.train_and_evaluate(train_ds.df)
 model.gen_submission_file(test_ds.df, submission_path='results/submission.csv')
-
-# TODO: Check for missing values in the test set 

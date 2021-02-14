@@ -44,7 +44,7 @@ class Dataset:
         """
         for col_name, fill_method in col_name_to_fill_method.items():
 
-            # Calculate the fill mode
+            # Calculate the fill value
             if fill_method == 'median':
                 fill_value = self.df[col_name].median()
             elif fill_method == 'mean':
@@ -78,8 +78,8 @@ class Dataset:
             else:
                 raise ValueError('Unknown category encoding provided: ``{encoding}``')
 
-    def preprocess_df_iteration_1(self, col_name_to_fill_method: dict, col_name_to_encoding: dict, predictors: list):
-        """Conducts the complete preprocessing pipeline for iteration 1
+    def preprocess(self, col_name_to_fill_method: dict, col_name_to_encoding: dict, predictors: list):
+        """Conducts the complete preprocessing pipeline
 
         :param col_name_to_fill_method: Dictionary describing which column's missing values should
             be filled and how
@@ -88,20 +88,13 @@ class Dataset:
         :param predictors: List of predictors to include
         """
         if not self.preprocessing_finished:
-            # Select a subset of predictors and always select the ground truth variable
             if self.ground_truth is not None:
                 cols_to_keep = predictors + [self.ground_truth, self.id_col]
             else:
                 cols_to_keep = predictors + [self.id_col]
             self.df = self.df[cols_to_keep]
-            
-            # Fill Missing values
             self._fill_missing_values(col_name_to_fill_method)
-
-            # Custom category encoding
             self._encode_categories(col_name_to_encoding)
-
-            # Set preprocessing_finished to True for idempotency
             self.preprocessing_finished = True
             logger.info('Preprocessing finished')
         else:
