@@ -37,11 +37,11 @@ col_name_to_encoding = {
 }
 
 # Preprocess the training data and get a subset of predictors
-train_ds.clean(col_name_to_fill_method, col_name_to_encoding)
+train_ds.do_basic_preprocessing(col_name_to_fill_method, col_name_to_encoding)
 train_df = train_ds.get_df_subset(predictors, id_col='PassengerId', ground_truth='Survived')
 
 # Preprocess the test data and get a subset of predictors
-test_ds.clean(col_name_to_fill_method, col_name_to_encoding)
+test_ds.do_basic_preprocessing(col_name_to_fill_method, col_name_to_encoding)
 test_df = test_ds.get_df_subset(predictors, id_col='PassengerId')
 
 # Train the model and generate the submission file

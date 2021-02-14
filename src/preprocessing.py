@@ -76,8 +76,8 @@ class Dataset:
             else:
                 raise ValueError('Unknown category encoding provided: ``{encoding}``')
 
-    def clean(self, col_name_to_fill_method: dict, col_name_to_encoding: dict):
-        """Cleans the data, i.e. replaces missing values and encodes categorical values
+    def do_basic_preprocessing(self, col_name_to_fill_method: dict, col_name_to_encoding: dict):
+        """Conducts basic preprocessing, i.e. replaces missing values and encodes categorical values
 
         :param col_name_to_fill_method: Dictionary describing which column's missing values should
             be filled and how
@@ -104,3 +104,32 @@ class Dataset:
             cols_to_keep = predictors + [id_col]
         df_subset = self.data[cols_to_keep]
         return df_subset
+
+    def do_advanced_preprocessing(
+        self, 
+        name_col: str='Name', 
+        cabin_col: str='Cabin', 
+        sibbling_spouse_col: str='SibSp', 
+        parent_child_col: str='Parch',
+        fare_col: str='Fare',
+        age_col: str='Age'
+    ):
+        """More advanced preprocessing based on:
+
+        - https://www.kaggle.com/imoore/titanic-the-only-notebook-you-need-to-see
+        - https://www.kaggle.com/startupsci/titanic-data-science-solutions
+        """
+        self.data['name_len'] = self.data[name_col].apply(lambda name: len(name.split()))
+        self.data['has_cabin'] = self.data[cabin_col].apply(lambda cabin: 1 if cabin is not None else 0)
+        self.data['family_size'] = self.data[sibbling_spouse_col] + self.data[parent_child_col]
+        self.data['is_alone'] = self.data['family_size'].apply(lambda fam_size: 1 if fam_size == 0 else 0)
+        self.data['fare_category'] = pd.cut(self.data[fare_col], bins=4, labels=False)
+        self.data['age_category'] = pd.cut(self.data[age_col], bins=4, labels=False)
+        
+        # Extract the title from the name column
+        self.data['title'] = self.data[name_col].str.extract(' ([A-Za-z]+)\.', expand=False) # (\w+\.) matches the first word ending with a dot character
+        self.data['title'] = self.data['title'].str.lower()
+        rare_titles = ['lady', 'countess','capt', 'col','don', 'dr', 'major', 'rev', 'sir', 'jonkheer', 'dona']
+        self.data['title'] = self.data['title'].str.replace(rare_titles, 'other')
+        title_mapping = {'mlle': 'miss', 'ms': 'miss', 'mme': 'mrs'} # some titles mean the same thing, but are spelled differently
+        self.data['title'] = self.data['title'].apply(lambda title: title_mapping[title])
