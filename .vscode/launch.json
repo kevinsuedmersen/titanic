@@ -5,14 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "dataset_test",
+            "name": "functional_tests",
             "type": "python",
             "request": "launch",
+            //"program": "${file}",
             "program": "/home/kevinsuedmersen/dev/titanic/functional_tests.py",
-            "python": "/home/kevinsuedmersen/miniconda3/envs/titanic/bin/python",
             "console": "internalConsole",
-            // Extend PYTHONPATH for importing our custom modules
-            "env": {"PYTHONPATH": "${PYTHONPATH}:/home/kevinsuedmersen/dev/titanic/src"}
+            "env": {
+                "PYTHONPATH": "${workspaceRoot}"
+            }
         }
     ]
 }
