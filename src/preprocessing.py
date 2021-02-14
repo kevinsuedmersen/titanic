@@ -6,9 +6,10 @@ from src.utils import make_sure_dir_exists
 logger = logging.getLogger(__name__)
 
 class Dataset:
-    def __init__(self, df_path: str, ground_truth: str):
+    def __init__(self, df_path: str, ground_truth: str=None, id_col: str=None):
         self.df_path = df_path
         self.ground_truth = ground_truth
+        self.id_col = id_col
         self.df = pd.read_csv(df_path)
         logger.info(F'Read dataframe from ``{df_path}`` into memory')
         self.preprocessing_finished = False
@@ -32,28 +33,30 @@ class Dataset:
         else:
             logger.info(f'A profiling report was already generated and is located at ``{html_path}``')
 
-    def _fill_missing_values(self, col_name: str, fill_mode: str):
+    def _fill_missing_values(self, col_name_to_fill_method: dict):
         """Fills missing values
 
-        :param col_name: Column of which to fill missing values
-        :param fill_mode: Mode used for filling missing values
+        :param col_name_to_fill_method: Dictionary mapping column name to method by which missing values
+            are filled
         :return: None
         """
-        # Calculate the fill mode
-        if fill_mode == 'median':
-            fill_value = self.df[col_name].median()
-        elif fill_mode == 'mean':
-            fill_value = self.df[col_name].mean()
-        elif fill_mode == 'mode':
-            fill_value = self.df[col_name].mode()
-        else: 
-            raise ValueError(f'Unknown fill_model provided: ``{fill_mode}``')
-        if isinstance(fill_value, pd.Series):
-            fill_value = fill_value.iloc[0]
-        
-        # Replace the missing values with the fill value
-        logger.info(f'The {fill_mode} of column ``{col_name}`` equals: {fill_value}')
-        self.df[col_name].fillna(fill_value, inplace=True)
+        for col_name, fill_method in col_name_to_fill_method.items():
+
+            # Calculate the fill mode
+            if fill_method == 'median':
+                fill_value = self.df[col_name].median()
+            elif fill_method == 'mean':
+                fill_value = self.df[col_name].mean()
+            elif fill_method == 'mode':
+                fill_value = self.df[col_name].mode()
+            else: 
+                raise ValueError(f'Unknown fill_model provided: ``{fill_method}``')
+            if isinstance(fill_value, pd.Series):
+                fill_value = fill_value.iloc[0]
+            
+            # Replace the missing values with the fill value
+            logger.info(f'The {fill_method} of column ``{col_name}`` equals: {fill_value}')
+            self.df[col_name].fillna(fill_value, inplace=True)
 
     def _encode_categories(self, col_name_to_encoding):
         """Encodes categorical variables
@@ -83,12 +86,15 @@ class Dataset:
         :param predictors: List of predictors to include
         """
         if not self.preprocessing_finished:
-            # Select a subset of predictors
-            self.df = self.df[predictors]
+            # Select a subset of predictors and always select the ground truth variable
+            if self.ground_truth is not None:
+                cols_to_keep = predictors + [self.ground_truth, self.id_col]
+            else:
+                cols_to_keep = predictors + [self.id_col]
+            self.df = self.df[cols_to_keep]
             
             # Fill Missing values
-            for col_name, fill_method in col_name_to_fill_method.items():
-                self._fill_missing_values(col_name, fill_method)
+            self._fill_missing_values(col_name_to_fill_method)
 
             # Custom category encoding
             self._encode_categories(col_name_to_encoding)
