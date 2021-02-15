@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "functional_tests",
+            "name": "tests",
             "type": "python",
             "request": "launch",
             //"program": "${file}",

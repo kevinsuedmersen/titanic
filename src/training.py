@@ -68,7 +68,7 @@ class Model:
         prec_val = metrics.precision_score(ytrue_val, ypred_val)
         rec_val = metrics.recall_score(ytrue_val, ypred_val)
         f1_val = metrics.f1_score(ytrue_val, ypred_val)
-        logger.info(f'Results on the validation set: accuracy {acc_val}, precision {prec_val}, recall {rec_val}, f1 {f1_val}')
+        logger.info(f'Results on the validation set: accuracy {acc_val:.2f}, precision {prec_val:.2f}, recall {rec_val:.2f}, f1 {f1_val:.2f}')
 
         # Save the model for later use
         self._pickle(self.model, self.model_path)

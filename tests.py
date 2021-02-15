@@ -20,7 +20,7 @@ col_name_to_fill_method = {
 }
 col_name_to_encoding = {
     'Pclass': {1: 3, 2: 2, 3: 1}, # original_value: encoding_value
-    'Sex': 'one_hot',
+    'Sex': {'male': 1, 'female': 0},
     'Embarked': 'one_hot'
 }
 
@@ -32,8 +32,7 @@ predictors = [
     'SibSp', 
     'Parch', 
     'Fare', 
-    'Sex_female', 
-    'Sex_male', 
+    'Sex', 
     'Embarked_C', 
     'Embarked_Q', 
     'Embarked_S'
