@@ -22,6 +22,7 @@ class Dataset:
         df_test = pd.read_csv(self.df_path_test)
         logger.info(f'Test samples: "{len(df_test)}"')
         df_test[self.ground_truth] = np.nan
+        df_test = df_test[df_train.columns] # Aligning column sequence with train df
         self.data = pd.concat([df_train, df_test], axis=0)
         logger.info(f'Total samples: "{len(self.data)}"')
         logger.info('Joined train and test sets together for the preprocessing. For training and testing, they will be separated again')

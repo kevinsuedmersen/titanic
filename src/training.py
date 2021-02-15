@@ -88,7 +88,7 @@ class Model:
         # Generate predictions on the test set
         X_test = self._get_inputs(df_test)
         logger.info('Generating predictions on the test set')
-        ypred_test = self.model.predict(X_test)
+        ypred_test = self.model.predict(X_test).astype('int')
         
         # Put the predictions into the submission file format and save it
         ids = df_test[self.id_col_name]
