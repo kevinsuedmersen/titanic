@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             //"program": "${file}",
-            "program": "/home/kevinsuedmersen/dev/titanic/functional_tests.py",
+            "program": "/home/kevinsuedmersen/dev/titanic/tests.py",
             "console": "internalConsole",
             "env": {
                 "PYTHONPATH": "${workspaceRoot}"

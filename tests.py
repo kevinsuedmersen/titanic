@@ -13,6 +13,19 @@ test_ds = Dataset(df_path='/home/kevinsuedmersen/dev/titanic/data/test.csv')
 test_ds.profile(title='test_ds_profile', html_path='results/test_ds_profiling.html')
 
 # Basic preprocessing configuration
+col_name_to_fill_method = {
+    'Age': 'median', 
+    'Embarked': 'mode',
+    'Fare': 'median'
+}
+col_name_to_encoding = {
+    'Pclass': {1: 3, 2: 2, 3: 1}, # original_value: encoding_value
+    'Sex': 'one_hot',
+    'Embarked': 'one_hot'
+}
+
+# Preprocess the training data and get a scaled subset of predictors
+train_ds.do_basic_preprocessing(col_name_to_fill_method, col_name_to_encoding)
 predictors = [
     'Pclass', 
     'Age', 
@@ -25,24 +38,11 @@ predictors = [
     'Embarked_Q', 
     'Embarked_S'
 ]
-col_name_to_fill_method = {
-    'Age': 'median', 
-    'Embarked': 'mode',
-    'Fare': 'median'
-}
-col_name_to_encoding = {
-    'Pclass': {1: 3, 2: 2, 3: 1}, # original_value: encoding_value
-    'Sex': 'one_hot',
-    'Embarked': 'one_hot'
-}
-
-# Preprocess the training data and get a subset of predictors
-train_ds.do_basic_preprocessing(col_name_to_fill_method, col_name_to_encoding)
-train_df = train_ds.get_df_subset(predictors, id_col='PassengerId', ground_truth='Survived')
+train_df = train_ds.select(predictors, id_col='PassengerId', ground_truth='Survived')
 
 # Preprocess the test data and get a subset of predictors
 test_ds.do_basic_preprocessing(col_name_to_fill_method, col_name_to_encoding)
-test_df = test_ds.get_df_subset(predictors, id_col='PassengerId')
+test_df = test_ds.select(predictors, id_col='PassengerId')
 
 # Train the model and generate the submission file
 model = Model(

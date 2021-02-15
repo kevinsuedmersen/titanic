@@ -89,10 +89,11 @@ class Dataset:
             self._encode_categories(col_name_to_encoding)
             self.preprocessing_finished = True
             logger.info('Preprocessing finished')
+            logger.info(f'Available columns: {list(self.data.columns)}')
         else:
             logger.info('Preprocessing was already conducted')
     
-    def get_df_subset(self, predictors: list, id_col: str, ground_truth: str=None):
+    def select(self, predictors: list, id_col: str, ground_truth: str=None):
         """Returns a subset of the dataframe
 
         :param predictors: List of predictors to include
@@ -119,6 +120,7 @@ class Dataset:
         - https://www.kaggle.com/imoore/titanic-the-only-notebook-you-need-to-see
         - https://www.kaggle.com/startupsci/titanic-data-science-solutions
         """
+        # Extract various features and/or indicators
         self.data['name_len'] = self.data[name_col].apply(lambda name: len(name.split()))
         self.data['has_cabin'] = self.data[cabin_col].apply(lambda cabin: 1 if cabin is not None else 0)
         self.data['family_size'] = self.data[sibbling_spouse_col] + self.data[parent_child_col]
@@ -129,7 +131,7 @@ class Dataset:
         # Extract the title from the name column
         self.data['title'] = self.data[name_col].str.extract(' ([A-Za-z]+)\.', expand=False) # (\w+\.) matches the first word ending with a dot character
         self.data['title'] = self.data['title'].str.lower()
-        rare_titles = ['lady', 'countess','capt', 'col','don', 'dr', 'major', 'rev', 'sir', 'jonkheer', 'dona']
+        rare_titles = ['lady', 'countess','capt', 'col','don', 'dr', 'major', 'rev', 'sir', 'jonkheer', 'dona'] # Put rare titles in a single category
         self.data['title'] = self.data['title'].str.replace(rare_titles, 'other')
         title_mapping = {'mlle': 'miss', 'ms': 'miss', 'mme': 'mrs'} # some titles mean the same thing, but are spelled differently
         self.data['title'] = self.data['title'].apply(lambda title: title_mapping[title])
