@@ -10,6 +10,7 @@ from sklearn.preprocessing import MinMaxScaler
 pd.options.display.width = 0
 logger = logging.getLogger(__name__)
 MODEL_DICT = {'svm': SVC}
+SCALER_DICT = {'min_max': MinMaxScaler}
 
 
 class Model:
@@ -31,14 +32,15 @@ class Model:
         X_raw = df[predictors].values
 
         # Scale the predictors
-        if self.scaling_mode == 'min_max':
-            self.scaler = MinMaxScaler()
+        if self.scaler is None:
+            scaler_cls = SCALER_DICT[self.scaling_mode]
+            self.scaler = scaler_cls()
+            self.scaler.fit(X_raw)
+            X_scaled = self.scaler.transform(X_raw)
         else:
-            raise ValueError(f'Unknown scaling_mode provided: {self.scaling_mode}')
-        self.scaler.fit(X_raw)
-        X_scaled = self.scaler.transform(X_raw)
+            X_scaled = self.scaler.transform(X_raw)
         
-        # Save scaler for generating the submissions later
+        # Save scaler for later use
         self._pickle(self.scaler, self.scaler_path)
 
         return X_scaled
