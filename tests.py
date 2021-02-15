@@ -7,12 +7,19 @@ from src.utils import set_root_logger
 set_root_logger()
 
 # Exploratory data analysis
-train_ds = Dataset(df_path='/home/kevinsuedmersen/dev/titanic/data/train.csv')
-train_ds.profile(title='train_ds_profile', html_path='results/train_ds_profiling.html')
-test_ds = Dataset(df_path='/home/kevinsuedmersen/dev/titanic/data/test.csv')
-test_ds.profile(title='test_ds_profile', html_path='results/test_ds_profiling.html')
+ds = Dataset(
+    df_path_train='/home/kevinsuedmersen/dev/titanic/data/train.csv',
+    df_path_test='/home/kevinsuedmersen/dev/titanic/data/test.csv',
+    id_col='PassengerId',
+    ground_truth='Survived'
+)
+# TODO: Uncomment following line in Notebook
+#ds.profile(title='ds_profile_report', html_path='results/ds_profile_report.html')
 
-# Basic preprocessing configuration
+####################################################################################################
+# Iteration 1
+####################################################################################################
+# Configurations
 col_name_to_fill_method = {
     'Age': 'median', 
     'Embarked': 'mode',
@@ -24,26 +31,13 @@ col_name_to_encoding = {
     'Embarked': 'one_hot'
 }
 
-# Preprocess the training data and get a scaled subset of predictors
-train_ds.do_basic_preprocessing(col_name_to_fill_method, col_name_to_encoding)
-predictors = [
-    'Pclass', 
-    'Age', 
-    'SibSp', 
-    'Parch', 
-    'Fare', 
-    'Sex', 
-    'Embarked_C', 
-    'Embarked_Q', 
-    'Embarked_S'
-]
-train_df = train_ds.select(predictors, id_col='PassengerId', ground_truth='Survived')
+# Preprocessing
+ds.do_basic_preprocessing(col_name_to_fill_method, col_name_to_encoding)
+cols_to_drop = ['Name', 'Ticket', 'Cabin', 'Embarked']
+train_df = ds.select(cols_to_drop, mode='training')
+test_df = ds.select(cols_to_drop, mode='testing')
 
-# Preprocess the test data and get a subset of predictors
-test_ds.do_basic_preprocessing(col_name_to_fill_method, col_name_to_encoding)
-test_df = test_ds.select(predictors, id_col='PassengerId')
-
-# Train the model and generate the submission file
+# Training, predicting and evaluating
 model = Model(
     model_name='svm',
     model_path='results/svm_model.pickle', 
@@ -54,4 +48,26 @@ model = Model(
     kernel='rbf'
 )
 model.train_and_evaluate(train_df)
-model.gen_submission_file(test_df, submission_path='results/submission.csv')
+model.gen_submission_file(test_df, submission_path='results/basic_preprocessing_submission.csv')
+
+####################################################################################################
+# Iteration 2
+####################################################################################################
+# Preprocessing
+ds.do_advanced_preprocessing()
+cols_to_drop += ['title']
+train_df = ds.select(cols_to_drop, mode='training')
+test_df = ds.select(cols_to_drop, mode='testing')
+
+# Training, predicting and evaluating
+model = Model(
+    model_name='svm',
+    model_path='results/svm_model.pickle', 
+    ground_truth='Survived', 
+    id_col_name='PassengerId',
+    scaling_mode='min_max',
+    scaler_path='results/min_max_scaler.pickle',
+    kernel='rbf'
+)
+model.train_and_evaluate(train_df)
+model.gen_submission_file(test_df, submission_path='results/advanced_preprocessing_submission.csv')
