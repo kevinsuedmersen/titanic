@@ -22,8 +22,6 @@ ml_pipeline = MLPipeline(
     df_path_test='data/test.csv', 
     id_col='PassengerId', 
     ground_truth='Survived', 
-    missing_value_config=MISSING_VALUE_CONFIG, 
-    encoding_config=ENCODING_CONFIG, 
     model_config=MODEL_CONFIG
 )
 
@@ -31,9 +29,17 @@ ml_pipeline = MLPipeline(
 #ml_pipeline.run_eda()
 
 # Iteration 1
-ml_pipeline.run(advanced_preprocessing=False)
+ml_pipeline.run(
+    missing_value_config=MISSING_VALUE_CONFIG, 
+    encoding_config=ENCODING_CONFIG, 
+    advanced_preprocessing=False
+)
 
 # Iteration 2
-ml_pipeline.run(advanced_preprocessing=True)
+ml_pipeline.run(
+    missing_value_config=MISSING_VALUE_CONFIG, 
+    encoding_config=ENCODING_CONFIG, 
+    advanced_preprocessing=True
+)
 
 # Iteration 3

@@ -39,7 +39,8 @@ class Dataset:
         """
         if not os.path.exists(html_path):
             logger.info('Generating the profiling report')
-            from pandas_profiling import ProfileReport # Locally import ProfileReport, because in the VS Code debugger, it takes AGES to import it. TODO: Put back to module beginning after successful debuggging
+            # TODO: Put import to the right place
+            from pandas_profiling import ProfileReport 
             profile_report = ProfileReport(self.data, title=title)
             if html_path is not None:
                 make_sure_dir_exists(html_path)
