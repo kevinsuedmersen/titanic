@@ -35,8 +35,8 @@ col_name_to_encoding = {
 # Preprocessing
 ds.do_basic_preprocessing(col_name_to_fill_method, col_name_to_encoding)
 cols_to_drop = ['Name', 'Ticket', 'Cabin', 'Embarked']
-train_df = ds.select(cols_to_drop, mode='training')
-test_df = ds.select(cols_to_drop, mode='testing')
+train_df = ds.drop_cols(cols_to_drop, mode='training')
+test_df = ds.drop_cols(cols_to_drop, mode='testing')
 
 # Training, predicting and evaluating
 model = Model(
@@ -56,9 +56,9 @@ model.gen_submission_file(test_df, submission_path='results/basic_preprocessing_
 ####################################################################################################
 # Preprocessing
 ds.do_advanced_preprocessing()
-cols_to_drop += ['title']
-train_df = ds.select(cols_to_drop, mode='training')
-test_df = ds.select(cols_to_drop, mode='testing')
+cols_to_drop += ['title', 'ticket_prefix', 'ticket_group']
+train_df = ds.drop_cols(cols_to_drop, mode='training')
+test_df = ds.drop_cols(cols_to_drop, mode='testing')
 
 # Training, predicting and evaluating
 model = Model(
@@ -72,14 +72,3 @@ model = Model(
 )
 model.train_and_evaluate(train_df)
 model.gen_submission_file(test_df, submission_path='results/advanced_preprocessing_submission.csv')
-
-####################################################################################################
-# Iteration 3
-####################################################################################################
-# Setting hyper-parameter values
-grid_search_grid = {
-    'C': np.logspace(-3, 10),
-    'gamma': np.logspace(-3, 10)
-}
-model.hparam_tuning(train_df, grid_search_grid)
-model.gen_submission_file(test_df, submission_path='results/grid_search.csv')

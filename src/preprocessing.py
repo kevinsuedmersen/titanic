@@ -2,7 +2,7 @@ import logging
 import os
 import pandas as pd
 import numpy as np
-from src.utils import make_sure_dir_exists
+from src.utils import clean_ticket, get_leading_ticket_number_digit, get_ticket_group, get_ticket_number, get_ticket_number_digit_len, get_ticket_prefix, make_sure_dir_exists
 from IPython.display import display, IFrame
 
 logger = logging.getLogger(__name__)
@@ -109,7 +109,7 @@ class Dataset:
         else:
             logger.info('Preprocessing was already conducted')
     
-    def select(self, cols_to_drop: list, mode: str='training'):
+    def drop_cols(self, cols_to_drop: list, mode: str='training'):
         """Returns a subset of the dataframe
 
         :param predictors: List of predictors to include
@@ -126,6 +126,73 @@ class Dataset:
             raise ValueError(f'Unknown model provided: "{mode}"')
         return df_subset
 
+    def _gen_continuous_vars(self, name_col, sibbling_spouse_col, parent_child_col):
+        # Generate continuous variables
+        self.data['name_len'] = self.data[name_col].apply(lambda name: len(name.split()))
+        self.data['family_size'] = self.data[sibbling_spouse_col] + self.data[parent_child_col]
+    
+    def _gen_indicator_vars(self, cabin_col):
+        # Generate indicators
+        self.data['has_cabin'] = self.data[cabin_col].apply(lambda cabin: 1 if cabin is not None else 0)
+        self.data['is_alone'] = self.data['family_size'].apply(lambda fam_size: 1 if fam_size == 0 else 0)
+
+    def _bin_continuous_vars(self, fare_col, age_col, n_bins: int=4):
+        # Bin continuous variables
+        self.data['fare_category'] = pd.cut(self.data[fare_col], bins=n_bins, labels=False)
+        self.data['age_category'] = pd.cut(self.data[age_col], bins=n_bins, labels=False)
+
+    def _extract_title_from_name(self, name_col):
+        # Extract the title from the name column
+        self.data['title'] = self.data[name_col].str.extract(' ([A-Za-z]+)\.', expand=False) # (\w+\.) matches the first word ending with a dot character
+        self.data['title'] = self.data['title'].str.lower()
+                    
+        # Handle missing titles
+        most_common_title = self.data['title'].mode().iloc[0]
+        self.data['title'].fillna(most_common_title)
+
+        # One hot encode the titles
+        dummy_titles = pd.get_dummies(self.data['title'], prefix='title')
+        self.data = pd.concat([self.data, dummy_titles], axis=1)
+
+    def _extract_ticket_info(self, ticket_col):
+        """Extracts information from the ticket column. Mostly based on: 
+
+        - https://www.kaggle.com/pliptor/titanic-ticket-only-study
+        :return: None
+        """
+        # For each ticket, count its number of duplicates
+        n_duplicate_tickets = self.data.groupby(ticket_col).size()
+        self.data['n_duplicate_tickets'] = self.data[ticket_col].map(n_duplicate_tickets)
+        
+        # Make the description of crew member tickets consistent with the following feature extraction
+        self.data[ticket_col] = self.data[ticket_col].replace('LINE','LINE 0')
+
+        # Clean the ticket column
+        self.data[ticket_col] = self.data[ticket_col].apply(lambda ticket: clean_ticket(ticket))
+
+        # Extracting the ticket prefix
+        self.data['ticket_prefix'] = self.data[ticket_col].apply(lambda ticket: get_ticket_prefix(ticket))
+
+        # Extract The ticket number
+        self.data['ticket_number'] = self.data[ticket_col].apply(lambda ticket: get_ticket_number(ticket))
+        
+        # Extract the digit length from the ticket
+        self.data['ticket_number_digit_len'] = self.data['ticket_number'] \
+            .apply(lambda ticket_number : get_ticket_number_digit_len(ticket_number))
+        
+        # Extract the leading digit from the ticket number
+        self.data['leading_digit'] = self.data['ticket_number'] \
+            .apply(lambda ticket_number: get_leading_ticket_number_digit(ticket_number))
+        
+        # Extract the ticket groups from the ticket number
+        self.data['ticket_group'] = self.data['ticket_number'] \
+            .apply(lambda ticket_number: get_ticket_group(ticket_number))
+
+        # One hot encode the ticket prefixes and ticket groups
+        ticket_prefix_dummies = pd.get_dummies(self.data['ticket_prefix'], prefix='ticket_prefix')
+        ticket_group_dummies = pd.get_dummies(self.data['ticket_group'], prefix='ticket_group')
+        self.data = pd.concat([self.data, ticket_prefix_dummies, ticket_group_dummies], axis=1)
+
     def do_advanced_preprocessing(
         self, 
         name_col: str='Name', 
@@ -133,7 +200,8 @@ class Dataset:
         sibbling_spouse_col: str='SibSp', 
         parent_child_col: str='Parch',
         fare_col: str='Fare',
-        age_col: str='Age'
+        age_col: str='Age',
+        ticket_col: str='Ticket'
     ):
         """More advanced preprocessing based on:
 
@@ -141,32 +209,14 @@ class Dataset:
         - https://www.kaggle.com/startupsci/titanic-data-science-solutions
         """
         if not self.advanced_preprocessing_finished:
-            # Generate continuous variables
-            self.data['name_len'] = self.data[name_col].apply(lambda name: len(name.split()))
-            self.data['family_size'] = self.data[sibbling_spouse_col] + self.data[parent_child_col]
-
-            # Generate indicators
-            self.data['has_cabin'] = self.data[cabin_col].apply(lambda cabin: 1 if cabin is not None else 0)
-            self.data['is_alone'] = self.data['family_size'].apply(lambda fam_size: 1 if fam_size == 0 else 0)
-            
-            # Categorize continuous variables
-            self.data['fare_category'] = pd.cut(self.data[fare_col], bins=4, labels=False)
-            self.data['age_category'] = pd.cut(self.data[age_col], bins=4, labels=False)
-            
-            # Extract the title from the name column
-            self.data['title'] = self.data[name_col].str.extract(' ([A-Za-z]+)\.', expand=False) # (\w+\.) matches the first word ending with a dot character
-            self.data['title'] = self.data['title'].str.lower()
-                        
-            # Handle missing titles
-            most_common_title = self.data['title'].mode().iloc[0]
-            self.data['title'].fillna(most_common_title)
-
-            # One hot encode the titles
-            dummy_titles = pd.get_dummies(self.data['title'], prefix='title')
-            self.data = pd.concat([self.data, dummy_titles], axis=1)
+            self._gen_continuous_vars(name_col, sibbling_spouse_col, parent_child_col)
+            self._gen_indicator_vars(cabin_col)
+            self._bin_continuous_vars(fare_col, age_col)
+            self._extract_title_from_name(name_col)
+            self._extract_ticket_info(ticket_col)
             
             # Logging and keeping track of state variables
-            logger.info(f'Available columns: {list(self.data.columns)}')
+            logger.info(f'Number of columns: {len(self.data.columns)}')
             self.advanced_preprocessing_finished = True
         else:
             logger.info('Advanced preprocessing was already done')
