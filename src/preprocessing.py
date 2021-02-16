@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import numpy as np
 from src.utils import make_sure_dir_exists
+from IPython.display import display, IFrame
 
 logger = logging.getLogger(__name__)
 
@@ -43,10 +44,11 @@ class Dataset:
                 make_sure_dir_exists(html_path)
                 profile_report.to_file(html_path)
                 logger.info(f'Saved the pandas-profiling report to ``{html_path}``')
-                if show_report_in_notebook:
-                    profile_report.to_notebook_iframe()
+            if show_report_in_notebook:
+                profile_report.to_notebook_iframe()
         else:
-            logger.info(f'A profiling report was already generated and is located at ``{html_path}``')
+            logger.info(f'A profiling report was already generated and will be loaded from ``{html_path}``')
+            display(IFrame(src=html_path, width=10**3, height=10**3))
 
     def _fill_missing_values(self, col_name_to_fill_method: dict):
         """Fills missing values
