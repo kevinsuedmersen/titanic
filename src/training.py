@@ -6,6 +6,7 @@ from sklearn.svm import SVC
 from sklearn import metrics
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import GridSearchCV
 
 pd.options.display.width = 0
 logger = logging.getLogger(__name__)
@@ -45,11 +46,14 @@ class Model:
 
         return X_scaled
     
-    def _get_train_val_data(self, df, test_size, random_state):
+    def _get_train_val_data(self, df, test_size, random_state=42):
         X = self._get_inputs(df)
         y = df[self.ground_truth].values
-        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=test_size, random_state=random_state)
-        return X_train, X_val, y_train, y_val
+        if test_size > 0:
+            X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=test_size, random_state=random_state)
+            return X_train, X_val, y_train, y_val
+        else:
+            return X, y
 
     @staticmethod
     def _pickle(obj, path):
@@ -57,10 +61,10 @@ class Model:
             pickle.dump(obj, file)
             logger.info(f'Saved the trained model to ``{path}``')
 
-    def train_and_evaluate(self, df, val_size=0.3, random_state=42):
+    def train_and_evaluate(self, train_df, val_size=0.3, random_state=42):
         # Train the model
         logger.info(f'Training ``{self.model_name}`` started')
-        X_train, X_val, ytrue_train, ytrue_val = self._get_train_val_data(df, val_size, random_state)
+        X_train, X_val, ytrue_train, ytrue_val = self._get_train_val_data(train_df, val_size, random_state)
         self.model.fit(X_train, ytrue_train)
         logger.info('Training finished')
 
@@ -76,11 +80,16 @@ class Model:
         self._pickle(self.model, self.model_path)
         self.trained = True
 
-    def hparam_tuning(self, grid_search_dict):
-        # TODO: HP tuning
+    def hparam_tuning(self, train_df, grid_search_dict):
+        gs = GridSearchCV(self.model, grid_search_dict, cv=3, scoring='accuracy', verbose=1, refit=True, n_jobs=-2)
+        X_train, y_train = self._get_train_val_data(train_df, test_size=0)
+        logger.info('Grid search started')
+        gs.fit(X_train, y_train)
+        logger.info('Grid search ended')
 
         # Save model for later use
-        self._pickle()
+        self.model = gs.best_estimator_
+        self._pickle(self.model, self.model_path)
     
     def gen_submission_file(self, df_test, submission_path):
         assert self.trained, 'Model must be trained, before the submission file can be generated'

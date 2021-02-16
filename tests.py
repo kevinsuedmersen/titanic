@@ -1,3 +1,4 @@
+import numpy as np
 from src.training import Model
 from src.preprocessing import Dataset
 from src.utils import set_root_logger
@@ -71,3 +72,14 @@ model = Model(
 )
 model.train_and_evaluate(train_df)
 model.gen_submission_file(test_df, submission_path='results/advanced_preprocessing_submission.csv')
+
+####################################################################################################
+# Iteration 3
+####################################################################################################
+# Setting hyper-parameter values
+grid_search_grid = {
+    'C': np.logspace(-3, 10),
+    'gamma': np.logspace(-3, 10)
+}
+model.hparam_tuning(train_df, grid_search_grid)
+model.gen_submission_file(test_df, submission_path='results/grid_search.csv')
