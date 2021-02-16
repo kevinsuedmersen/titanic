@@ -24,7 +24,7 @@ ENCODING_CONFIG = {
 
 MODEL_CONFIG = {
     'svm': {'kernel': 'rbf', 'scaling_mode': 'min_max'},
-    'decision_tree': {'scaling_mode': 'min_max'},
+    'decision_tree': {'scaling_mode': None},
     'random_forest': {'scaling_mode': 'min_max'},
 }
 
