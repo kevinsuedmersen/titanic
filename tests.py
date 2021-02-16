@@ -1,5 +1,15 @@
 from src.pipeline import MLPipeline
 
+
+# EDA
+ml_pipeline = MLPipeline(
+    df_path_train='data/train.csv', 
+    df_path_test='data/test.csv', 
+    id_col='PassengerId', 
+    ground_truth='Survived'
+)
+#ml_pipeline.run_eda()
+
 # Setup
 MISSING_VALUE_CONFIG = {
     'Age': 'median', 
@@ -17,29 +27,21 @@ MODEL_CONFIG = {
     'decision_tree': {},
     'random_forest': {}
 }
-ml_pipeline = MLPipeline(
-    df_path_train='data/train.csv', 
-    df_path_test='data/test.csv', 
-    id_col='PassengerId', 
-    ground_truth='Survived', 
-    model_config=MODEL_CONFIG
-)
-
-# EDA
-#ml_pipeline.run_eda()
 
 # Iteration 1
 ml_pipeline.run(
     missing_value_config=MISSING_VALUE_CONFIG, 
     encoding_config=ENCODING_CONFIG, 
-    advanced_preprocessing=False
+    advanced_preprocessing=False,
+    model_config=MODEL_CONFIG
 )
 
 # Iteration 2
 ml_pipeline.run(
     missing_value_config=MISSING_VALUE_CONFIG, 
     encoding_config=ENCODING_CONFIG, 
-    advanced_preprocessing=True
+    advanced_preprocessing=True,
+    model_config=MODEL_CONFIG
 )
 
 # Iteration 3

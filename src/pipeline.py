@@ -10,15 +10,13 @@ class MLPipeline:
         df_path_train, 
         df_path_test, 
         id_col, 
-        ground_truth,
-        model_config
+        ground_truth
     ):
         set_root_logger()
         self.df_path_train = df_path_train
         self.df_path_test = df_path_test
         self.id_col = id_col
         self.ground_truth = ground_truth
-        self.model_config = model_config
 
         self.ds = Dataset(
             df_path_train=df_path_train,
@@ -49,8 +47,8 @@ class MLPipeline:
         print('\ntest dataframe:')
         display(self.test_df)
 
-    def _run_training_pipeline(self, advanced_preprocessing=False):
-        for model_name, model_params in self.model_config.items():
+    def _run_training_pipeline(self, advanced_preprocessing, model_config):
+        for model_name, model_params in model_config.items():
             model = Model(
                 model_name=model_name,
                 ground_truth='Survived', 
@@ -64,6 +62,6 @@ class MLPipeline:
             else:
                 model.gen_submission_file(self.test_df, submission_name='basic')
 
-    def run(self, missing_value_config, encoding_config, advanced_preprocessing):
+    def run(self, missing_value_config, encoding_config, advanced_preprocessing, model_config):
         self._run_prep_pipeline(missing_value_config, encoding_config, advanced_preprocessing)
-        self._run_training_pipeline(advanced_preprocessing)
+        self._run_training_pipeline(advanced_preprocessing, model_config)
