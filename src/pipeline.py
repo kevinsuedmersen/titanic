@@ -7,11 +7,17 @@ from src.preprocessing import Dataset
 class MLPipeline:
     def __init__(
         self, 
-        df_path_train, 
-        df_path_test, 
-        id_col, 
-        ground_truth
+        df_path_train: str, 
+        df_path_test: str, 
+        id_col: str, 
+        ground_truth: str
     ):
+        """
+        :param df_path_train: Path to training dataset
+        :param df_path_test: Path to test dataset
+        :param id_col: Name of the id column
+        :return: self
+        """
         set_root_logger()
         self.df_path_train = df_path_train
         self.df_path_test = df_path_test
@@ -27,10 +33,20 @@ class MLPipeline:
         self.train_df = None
         self.test_df = None
 
-    def run_eda(self, title='ds_profile_report', html_path='results/ds_profile_report.html'):
+    def run_eda(self, title: str='ds_profile_report', html_path:str='results/ds_profile_report.html'):
+        """Runs exploratory data analysis
+        :param title: Title of pandas profiling report
+        :html_path: Path to pandas profiling report
+        :return: None
+        """
         self.ds.profile(title=title, html_path=html_path)
 
-    def _run_prep_pipeline(self, missing_value_config, encoding_config, advanced_preprocessing=False):
+    def _run_prep_pipeline(self, missing_value_config: dict, encoding_config: dict, advanced_preprocessing: bool=False):
+        """Always conducts basic preprocessing and optionally also conducts advanced preprocessing
+        :param missing_value_config: Dictionary containing information how to deal with missing values
+        :param encoding_config: Dictionary containing information how to deal with categorical variables
+        :return: None
+        """
         self.ds.do_basic_preprocessing(missing_value_config, encoding_config)
         cols_to_drop = ['Name', 'Ticket', 'Cabin', 'Embarked']
         self.train_df = self.ds.drop_cols(cols_to_drop, mode='training')
@@ -47,7 +63,13 @@ class MLPipeline:
         print('\ntest dataframe:')
         display(self.test_df)
 
-    def _run_training_pipeline(self, advanced_preprocessing, model_config):
+    def _run_training_pipeline(self, advanced_preprocessing: bool, model_config: dict):
+        """Trains and evaluates all models specified in model_config. Scaling input features is also
+        optionally conducted
+        :param advanced_preprocessing: Whether or not to conduct advanced preprocessing
+        :param model_config: Model configuration
+        :return: None
+        """
         for model_name, model_params in model_config.items():
             scaling_mode = model_params.pop('scaling_mode')
             model = Model(
@@ -66,5 +88,11 @@ class MLPipeline:
                 model.gen_submission_file(self.test_df, submission_name='basic')
 
     def run(self, missing_value_config, encoding_config, advanced_preprocessing, model_config):
+        """Runs the preprocessing and training sub-pipelines
+        :param missing_value_config: Configuration how to deal with missing values
+        :param encoding_config: Configuration how to encode categorical variables
+        :param advanced_preprocessing: Whether or not to conduct advanced preprocessing
+        :param model_config: Model configuration
+        """
         self._run_prep_pipeline(missing_value_config, encoding_config, advanced_preprocessing)
         self._run_training_pipeline(advanced_preprocessing, model_config)
