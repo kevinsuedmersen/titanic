@@ -15,7 +15,7 @@ SCALER_DICT = {'min_max': MinMaxScaler}
 
 
 class Model:
-    def __init__(self, model_name, model_path, ground_truth, id_col_name, scaling_mode, scaler_path, **kwargs):
+    def __init__(self, model_name, model_path, ground_truth, id_col_name, scaling_mode: str=None, scaler_path: str=None, **kwargs):
         self.model_name = model_name
         self.model_path = model_path
         self.ground_truth = ground_truth
@@ -30,21 +30,20 @@ class Model:
     def _get_inputs(self, df):
         # Get a subset of the predictors
         predictors = df.columns.difference([self.ground_truth, self.id_col_name])
-        X_raw = df[predictors].values
+        X = df[predictors].values
 
         # Scale the predictors
-        if self.scaler is None:
-            scaler_cls = SCALER_DICT[self.scaling_mode]
-            self.scaler = scaler_cls()
-            self.scaler.fit(X_raw)
-            X_scaled = self.scaler.transform(X_raw)
-        else:
-            X_scaled = self.scaler.transform(X_raw)
-        
-        # Save scaler for later use
-        self._pickle(self.scaler, self.scaler_path)
+        if self.scaling_mode is not None:
+            if self.scaler is None:
+                scaler_cls = SCALER_DICT[self.scaling_mode]
+                self.scaler = scaler_cls()
+                self.scaler.fit(X)
+                X = self.scaler.transform(X)
+            else:
+                X = self.scaler.transform(X)
+            self._pickle(self.scaler, self.scaler_path)
 
-        return X_scaled
+        return X
     
     def _get_train_val_data(self, df, test_size, random_state=42):
         X = self._get_inputs(df)
