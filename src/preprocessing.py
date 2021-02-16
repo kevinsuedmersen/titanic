@@ -6,6 +6,7 @@ from src.utils import clean_ticket, get_leading_ticket_number_digit, get_ticket_
 from IPython.display import display, IFrame
 
 logger = logging.getLogger(__name__)
+pd.options.display.width = 0
 
 class Dataset:
     def __init__(self, df_path_train: str, df_path_test: str, id_col: str, ground_truth: str):

@@ -1,8 +1,11 @@
 import logging
+import os
 import pickle
 import pandas as pd
 from src.utils import make_sure_dir_exists
 from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn import metrics
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
@@ -10,22 +13,39 @@ from sklearn.model_selection import GridSearchCV
 
 pd.options.display.width = 0
 logger = logging.getLogger(__name__)
-MODEL_DICT = {'svm': SVC}
-SCALER_DICT = {'min_max': MinMaxScaler}
+MODEL_DICT = {
+    'svm': SVC, 
+    'decision_tree': DecisionTreeClassifier, 
+    'random_forest': RandomForestClassifier
+}
+SCALER_DICT = {
+    'min_max': MinMaxScaler
+}
 
 
 class Model:
-    def __init__(self, model_name, model_path, ground_truth, id_col_name, scaling_mode: str=None, scaler_path: str=None, **kwargs):
+    def __init__(
+        self, 
+        model_name: str, 
+        ground_truth: str, 
+        id_col_name: str, 
+        scaling_mode: str=None, 
+        results_dir: str='results', 
+        **kwargs
+    ):
         self.model_name = model_name
-        self.model_path = model_path
+        self.model_path = os.path.join(results_dir, model_name + '.pickle')
         self.ground_truth = ground_truth
         self.id_col_name = id_col_name
-        self.scaler_path = scaler_path
+        self.scaler_path = os.path.join(results_dir, scaling_mode + '.pickle')
         self.scaling_mode = scaling_mode
-        self.scaler = None
+        self.results_dir = results_dir
+        
+        # Instantiate the model and other placeholders
         model_cls = MODEL_DICT[model_name]
         self.model = model_cls(**kwargs)
         self.trained = False
+        self.scaler = None
 
     def _get_inputs(self, df):
         # Get a subset of the predictors
@@ -90,7 +110,7 @@ class Model:
         self.model = gs.best_estimator_
         self._pickle(self.model, self.model_path)
     
-    def gen_submission_file(self, df_test, submission_path):
+    def gen_submission_file(self, df_test, submission_name):
         assert self.trained, 'Model must be trained, before the submission file can be generated'
 
         # Generate predictions on the test set
@@ -102,6 +122,7 @@ class Model:
         ids = df_test[self.id_col_name]
         submission_dict = {self.id_col_name: ids, self.ground_truth: ypred_test}
         submission_df = pd.DataFrame(submission_dict)
+        submission_path = os.path.join(self.results_dir, f'{self.model_name}_{submission_name}.csv')
         make_sure_dir_exists(submission_path)
         submission_df.to_csv(submission_path, index=False)
         logger.info(f'Saved submission to ``{submission_path}``')

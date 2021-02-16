@@ -71,3 +71,4 @@ def get_ticket_group(ticket_number, debug=False):
     if debug:
         print(ticket_group)
     return ticket_group
+
