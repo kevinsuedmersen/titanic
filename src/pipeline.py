@@ -49,14 +49,17 @@ class MLPipeline:
 
     def _run_training_pipeline(self, advanced_preprocessing, model_config):
         for model_name, model_params in model_config.items():
+            scaling_mode = model_params.pop('scaling_mode')
             model = Model(
                 model_name=model_name,
                 ground_truth='Survived', 
                 id_col_name='PassengerId',
-                scaling_mode='min_max',
+                scaling_mode=scaling_mode,
                 **model_params
             )
+            model_params['scaling_mode'] = scaling_mode
             model.train_and_evaluate(self.train_df)
+            
             if advanced_preprocessing:
                 model.gen_submission_file(self.test_df, submission_name='advanced')
             else:

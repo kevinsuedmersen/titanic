@@ -37,7 +37,6 @@ class Model:
         self.model_path = os.path.join(results_dir, model_name + '.pickle')
         self.ground_truth = ground_truth
         self.id_col_name = id_col_name
-        self.scaler_path = os.path.join(results_dir, scaling_mode + '.pickle')
         self.scaling_mode = scaling_mode
         self.results_dir = results_dir
         
@@ -61,7 +60,8 @@ class Model:
                 X = self.scaler.transform(X)
             else:
                 X = self.scaler.transform(X)
-            self._pickle(self.scaler, self.scaler_path)
+            scaler_path = os.path.join(self.results_dir, self.scaling_mode + '.pickle')
+            self._pickle(self.scaler, scaler_path)
 
         return X
     
