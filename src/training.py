@@ -33,6 +33,19 @@ class Model:
         results_dir: str='results', 
         **kwargs
     ):
+        """Instantiates the model class
+
+        :param model_name: Model name
+        :type model_name: str
+        :param ground_truth: Name of ground truth col
+        :type ground_truth: str
+        :param id_col_name: Name of id vol
+        :type id_col_name: str
+        :param scaling_mode: Scaling method applied to input features, defaults to None
+        :type scaling_mode: str, optional
+        :param results_dir: Directory where results will be stored, defaults to 'results'
+        :type results_dir: str, optional
+        """
         self.model_name = model_name
         self.model_path = os.path.join(results_dir, model_name + '.pickle')
         self.ground_truth = ground_truth
@@ -46,7 +59,14 @@ class Model:
         self.trained = False
         self.scaler = None
 
-    def _get_inputs(self, df):
+    def _get_inputs(self, df: pd.DataFrame):
+        """Selects the input features, converts them to numpy arrays and optionally scales them
+
+        :param df: Dataframe with all preprocessed data
+        :type df: pd.DataFrame
+        :return: (Scaled) input features
+        :rtype: np.array
+        """
         # Get a subset of the predictors
         predictors = df.columns.difference([self.ground_truth, self.id_col_name])
         X = df[predictors].values
@@ -65,7 +85,18 @@ class Model:
 
         return X
     
-    def _get_train_val_data(self, df, test_size, random_state=42):
+    def _get_train_val_data(self, df: pd.DataFrame, test_size: float, random_state=42):
+        """Splits the training data into training and validation subset
+
+        :param df: Dataframe with all preprocessed data
+        :type df: pd.DataFrame
+        :param test_size: Fraction of data reserved for validating
+        :type test_size: flow
+        :param random_state: Random state when splitting dataset, defaults to 42
+        :type random_state: int, optional
+        :return: X, the potentially scaled input features and y the outputs
+        :rtype: tuple
+        """
         X = self._get_inputs(df)
         y = df[self.ground_truth].values
         if test_size > 0:
@@ -75,12 +106,28 @@ class Model:
             return X, y
 
     @staticmethod
-    def _pickle(obj, path):
+    def _pickle(obj: object, path: str):
+        """Serializes obj to path
+
+        :param obj: Some python object
+        :type obj: object
+        :param path: Path where to save obj
+        :type path: str
+        """
          with open(path, 'wb') as file:
             pickle.dump(obj, file)
             logger.info(f'Saved the trained model to ``{path}``')
 
-    def train_and_evaluate(self, train_df, val_size=0.3, random_state=42):
+    def train_and_evaluate(self, train_df: pd.DataFrame, val_size: float=0.3, random_state: int=42):
+        """Trains the model and evaluates it on the validation set
+
+        :param train_df: Dataframe with the training data
+        :type train_df: pd.DataFrame
+        :param val_size: Fraction of data reserved for validating, defaults to 0.3
+        :type val_size: float, optional
+        :param random_state: Random state, defaults to 42
+        :type random_state: int, optional
+        """
         # Train the model
         logger.info(f'Training ``{self.model_name}`` started')
         X_train, X_val, ytrue_train, ytrue_val = self._get_train_val_data(train_df, val_size, random_state)
@@ -99,7 +146,14 @@ class Model:
         self._pickle(self.model, self.model_path)
         self.trained = True
 
-    def hparam_tuning(self, train_df, grid_search_dict):
+    def hparam_tuning(self, train_df: pd.DataFrame, grid_search_dict: dict):
+        """Conducts a grid search to find the optimal hyper params
+
+        :param train_df: Training dataframe
+        :type train_df: Dataframe with the training data
+        :param grid_search_dict: Dict containing a mapping between hyper-param and its values to test
+        :type grid_search_dict: dict
+        """
         gs = GridSearchCV(self.model, grid_search_dict, cv=3, scoring='accuracy', verbose=1, refit=True, n_jobs=-2)
         X_train, y_train = self._get_train_val_data(train_df, test_size=0)
         logger.info('Grid search started')
@@ -110,7 +164,14 @@ class Model:
         self.model = gs.best_estimator_
         self._pickle(self.model, self.model_path)
     
-    def gen_submission_file(self, df_test, submission_name):
+    def gen_submission_file(self, df_test: pd.DataFrame, submission_name: str):
+        """Generates the submission file
+
+        :param df_test: Dataframe with the test data
+        :type df_test: pd.DataFrame
+        :param submission_name: Name of this submission which will be appended to the submission file
+        :type submission_name: str
+        """
         assert self.trained, 'Model must be trained, before the submission file can be generated'
 
         # Generate predictions on the test set
