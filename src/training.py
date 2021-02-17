@@ -114,7 +114,7 @@ class Model:
         :param path: Path where to save obj
         :type path: str
         """
-         with open(path, 'wb') as file:
+        with open(path, 'wb') as file:
             pickle.dump(obj, file)
             logger.info(f'Saved the trained model to ``{path}``')
 
@@ -147,24 +147,26 @@ class Model:
         self.trained = True
 
     def hparam_tuning(self, train_df: pd.DataFrame, grid_search_dict: dict):
-        """Conducts a grid search to find the optimal hyper params
+        """Conducts a grid search to find the optimal hyper params using 3 fold cross validation. 
+        The best model is then retrained on the complete training dataset
 
         :param train_df: Training dataframe
         :type train_df: Dataframe with the training data
         :param grid_search_dict: Dict containing a mapping between hyper-param and its values to test
         :type grid_search_dict: dict
         """
-        gs = GridSearchCV(self.model, grid_search_dict, cv=3, scoring='accuracy', verbose=1, refit=True, n_jobs=-2)
+        gs = GridSearchCV(self.model, grid_search_dict, cv=3, scoring='accuracy', verbose=1, refit=True)
         X_train, y_train = self._get_train_val_data(train_df, test_size=0)
-        logger.info('Grid search started')
+        logger.info(f'Grid search started for model {self.model_name}')
         gs.fit(X_train, y_train)
         logger.info('Grid search ended')
 
         # Save model for later use
         self.model = gs.best_estimator_
         self._pickle(self.model, self.model_path)
+        self.trained = True
     
-    def gen_submission_file(self, df_test: pd.DataFrame, submission_name: str):
+    def gen_submission_file(self, df_test: pd.DataFrame, submission_filepath: str):
         """Generates the submission file
 
         :param df_test: Dataframe with the test data
@@ -183,7 +185,7 @@ class Model:
         ids = df_test[self.id_col_name]
         submission_dict = {self.id_col_name: ids, self.ground_truth: ypred_test}
         submission_df = pd.DataFrame(submission_dict)
-        submission_path = os.path.join(self.results_dir, f'{self.model_name}_{submission_name}.csv')
+        submission_path = os.path.join(self.results_dir, submission_filepath)
         make_sure_dir_exists(submission_path)
         submission_df.to_csv(submission_path, index=False)
         logger.info(f'Saved submission to ``{submission_path}``')

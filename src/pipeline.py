@@ -63,31 +63,59 @@ class MLPipeline:
         print('\ntest dataframe:')
         display(self.test_df)
 
-    def _run_training_pipeline(self, advanced_preprocessing: bool, model_config: dict):
+    def _run_training_pipeline(self, advanced_preprocessing: bool, model_config: dict, hp_tuning: bool):
         """Trains and evaluates all models specified in model_config. Scaling input features is also
         optionally conducted
         :param advanced_preprocessing: Whether or not to conduct advanced preprocessing
         :param model_config: Model configuration
+        :param hp_tuning: Whether or not to perform hyper parameter tuning
         :return: None
         """
         for model_name, model_params in model_config.items():
-            scaling_mode = model_params.pop('scaling_mode')
-            model = Model(
-                model_name=model_name,
-                ground_truth='Survived', 
-                id_col_name='PassengerId',
-                scaling_mode=scaling_mode,
-                **model_params
-            )
-            model_params['scaling_mode'] = scaling_mode
-            model.train_and_evaluate(self.train_df)
-            
-            if advanced_preprocessing:
-                model.gen_submission_file(self.test_df, submission_name='advanced')
-            else:
-                model.gen_submission_file(self.test_df, submission_name='basic')
 
-    def run(self, missing_value_config, encoding_config, advanced_preprocessing, model_config):
+            # Temporarily remove the scaling mode from the model config
+            scaling_mode = model_params.pop('scaling_mode')
+            
+            # Conduct a single training run or hp tuning
+            if not hp_tuning:
+                model = Model(
+                    model_name=model_name,
+                    ground_truth='Survived', 
+                    id_col_name='PassengerId',
+                    scaling_mode=scaling_mode,
+                    **model_params
+                )    
+                model.train_and_evaluate(self.train_df)
+                submission_filepath = f'{model_name}_single_training'
+            else:
+                model = Model(
+                    model_name=model_name,
+                    ground_truth='Survived', 
+                    id_col_name='PassengerId',
+                    scaling_mode=scaling_mode
+                )
+                model.hparam_tuning(self.train_df, model_params)
+                submission_filepath = f'{model_name}_hp_tuning'
+            
+            # Attach the sacling mode again
+            model_params['scaling_mode'] = scaling_mode
+
+            # Save submission file
+            if advanced_preprocessing:
+                submission_filepath += '_advanced_prep.csv'
+                model.gen_submission_file(self.test_df, submission_filepath=submission_filepath)
+            else:
+                submission_filepath += '_basic_prep.csv'
+                model.gen_submission_file(self.test_df, submission_filepath=submission_filepath)
+
+    def run(
+        self, 
+        missing_value_config: dict, 
+        encoding_config: dict, 
+        advanced_preprocessing: bool, 
+        model_config: dict=None, 
+        hp_tuning: bool=False
+    ):
         """Runs the preprocessing and training sub-pipelines
         :param missing_value_config: Configuration how to deal with missing values
         :param encoding_config: Configuration how to encode categorical variables
@@ -95,4 +123,4 @@ class MLPipeline:
         :param model_config: Model configuration
         """
         self._run_prep_pipeline(missing_value_config, encoding_config, advanced_preprocessing)
-        self._run_training_pipeline(advanced_preprocessing, model_config)
+        self._run_training_pipeline(advanced_preprocessing, model_config, hp_tuning)
