@@ -16,17 +16,6 @@ def set_root_logger():
     root_logger.addHandler(console_handler)
     logger.info('Root logger is set up')
 
-def make_sure_dir_exists(file_path: str):
-    """Makes sure the dir of file_path exists
-
-    :param file_path: Path to some file
-    :type file_path: str
-    """
-    dir_path = os.path.dirname(file_path)
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
-        logger.info(f'Created directory ``{dir_path}``')
-
 
 def clean_ticket(ticket: str, debug: bool=False):
     """Cleans a ticket entry

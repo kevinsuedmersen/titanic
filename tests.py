@@ -10,7 +10,8 @@ if __name__ == '__main__':
         df_path_train='data/train.csv', 
         df_path_test='data/test.csv', 
         id_col='PassengerId', 
-        ground_truth='Survived'
+        ground_truth='Survived',
+        results_dir='results'
     )
     #ml_pipeline.run_eda()
 

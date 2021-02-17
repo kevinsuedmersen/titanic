@@ -1,8 +1,12 @@
+import os
+import shutil
+import logging
 from IPython.display import display
 from src.training import Model
 from src.utils import set_root_logger
 from src.preprocessing import Dataset
 
+logger = logging.getLogger(__name__)
 
 class MLPipeline:
     def __init__(
@@ -10,12 +14,15 @@ class MLPipeline:
         df_path_train: str, 
         df_path_test: str, 
         id_col: str, 
-        ground_truth: str
+        ground_truth: str,
+        results_dir: str='results'
     ):
         """
         :param df_path_train: Path to training dataset
         :param df_path_test: Path to test dataset
         :param id_col: Name of the id column
+        :param results_dir: Dir where results are stored
+        :param clear_results: Whether or not to delete results from prior runs
         :return: self
         """
         set_root_logger()
@@ -23,7 +30,8 @@ class MLPipeline:
         self.df_path_test = df_path_test
         self.id_col = id_col
         self.ground_truth = ground_truth
-
+        self.results_dir = results_dir
+        self._prepare_workspace()
         self.ds = Dataset(
             df_path_train=df_path_train,
             df_path_test=df_path_test,
@@ -32,6 +40,15 @@ class MLPipeline:
         )
         self.train_df = None
         self.test_df = None
+
+    def _prepare_workspace(self):
+        """Prepares the workspace, i.e. removes/creates folders on disk
+        """
+        if os.path.exists(self.results_dir):
+            shutil.rmtree(self.results_dir)
+            logger.info('Cleared results dir')
+        os.makedirs(self.results_dir)
+        logger.info('Created results dir')
 
     def run_eda(self, title: str='ds_profile_report', html_path:str='results/ds_profile_report.html'):
         """Runs exploratory data analysis
@@ -121,6 +138,7 @@ class MLPipeline:
         :param encoding_config: Configuration how to encode categorical variables
         :param advanced_preprocessing: Whether or not to conduct advanced preprocessing
         :param model_config: Model configuration
+        :param hp_tuning: Whether or not to perform hyper parameter tuning
         """
         self._run_prep_pipeline(missing_value_config, encoding_config, advanced_preprocessing)
         self._run_training_pipeline(advanced_preprocessing, model_config, hp_tuning)

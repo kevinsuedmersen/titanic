@@ -2,7 +2,6 @@ import logging
 import os
 import pickle
 import pandas as pd
-from src.utils import make_sure_dir_exists
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -186,6 +185,5 @@ class Model:
         submission_dict = {self.id_col_name: ids, self.ground_truth: ypred_test}
         submission_df = pd.DataFrame(submission_dict)
         submission_path = os.path.join(self.results_dir, submission_filepath)
-        make_sure_dir_exists(submission_path)
         submission_df.to_csv(submission_path, index=False)
         logger.info(f'Saved submission to ``{submission_path}``')

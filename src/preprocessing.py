@@ -2,7 +2,7 @@ import logging
 import os
 import pandas as pd
 import numpy as np
-from src.utils import clean_ticket, get_leading_ticket_number_digit, get_ticket_group, get_ticket_number, get_ticket_number_digit_len, get_ticket_prefix, make_sure_dir_exists
+from src.utils import clean_ticket, get_leading_ticket_number_digit, get_ticket_group, get_ticket_number, get_ticket_number_digit_len, get_ticket_prefix
 from IPython.display import display, IFrame
 
 logger = logging.getLogger(__name__)
@@ -56,7 +56,6 @@ class Dataset:
             from pandas_profiling import ProfileReport 
             profile_report = ProfileReport(self.data, title=title)
             if html_path is not None:
-                make_sure_dir_exists(html_path)
                 profile_report.to_file(html_path)
                 logger.info(f'Saved the pandas-profiling report to ``{html_path}``')
             profile_report.to_notebook_iframe()
