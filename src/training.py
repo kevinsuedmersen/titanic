@@ -159,6 +159,8 @@ class Model:
         logger.info(f'Grid search started for model {self.model_name}')
         gs.fit(X_train, y_train)
         logger.info('Grid search ended')
+        logger.info(f'The best cross-validated score was an accuracy of {gs.best_score_:.2f}')
+        logger.info(f'The best parameters were: {gs.best_params_}')
 
         # Save model for later use
         self.model = gs.best_estimator_
