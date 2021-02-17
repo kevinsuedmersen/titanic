@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from src.utils import clean_ticket, get_leading_ticket_number_digit, get_ticket_group, get_ticket_number, get_ticket_number_digit_len, get_ticket_prefix
 from IPython.display import display, IFrame
+from pandas_profiling import ProfileReport
 
 logger = logging.getLogger(__name__)
 pd.options.display.width = 0
@@ -52,8 +53,6 @@ class Dataset:
         """
         if not os.path.exists(html_path):
             logger.info('Generating the profiling report')
-            # TODO: Put import to the right place
-            from pandas_profiling import ProfileReport 
             profile_report = ProfileReport(self.data, title=title)
             if html_path is not None:
                 profile_report.to_file(html_path)
