@@ -7,8 +7,8 @@ from src.pipeline import MLPipeline
 if __name__ == '__main__':
     # EDA
     ml_pipeline = MLPipeline(
-        df_path_train='data/train.csv', 
-        df_path_test='data/test.csv', 
+        df_path_train='resources/data/train.csv', 
+        df_path_test='resources/data/test.csv', 
         id_col='PassengerId', 
         ground_truth='Survived',
         results_dir='results'
